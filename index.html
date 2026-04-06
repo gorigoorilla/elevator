@@ -20,12 +20,13 @@ html,body{height:100%;background:#0a0a0a;overflow:hidden;}
 #brand-name{color:#fff;font-size:13px;font-weight:700;letter-spacing:3px;font-family:Arial,sans-serif;}
 #brand-right{color:rgba(255,255,255,0.6);font-size:9px;letter-spacing:1px;font-family:Arial,sans-serif;}
 #display-wrap{background:#0d0d0d;padding:20px 16px 14px;border-bottom:1px solid #1a1a1a;}
-#arrows{display:flex;justify-content:center;gap:8px;margin-bottom:10px;}
-.tri{width:0;height:0;transition:all .2s;}
-.tri-up{border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:20px solid #222;}
-.tri-up.on{border-bottom-color:#ff6b00;filter:drop-shadow(0 0 8px #ff6b00);}
-.tri-down{border-left:14px solid transparent;border-right:14px solid transparent;border-top:20px solid #222;}
-.tri-down.on{border-top-color:#ff6b00;filter:drop-shadow(0 0 8px #ff6b00);}
+#arrows{display:flex;justify-content:center;gap:24px;margin-bottom:10px;}
+.arrow-col{display:flex;flex-direction:column;gap:5px;align-items:center;}
+.tri{width:0;height:0;transition:all .15s;}
+.tri-up{border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:16px solid #1a1a1a;}
+.tri-up.on{border-bottom-color:#ff6b00;filter:drop-shadow(0 0 6px #ff6b00);}
+.tri-down{border-left:11px solid transparent;border-right:11px solid transparent;border-top:16px solid #1a1a1a;}
+.tri-down.on{border-top-color:#ff6b00;filter:drop-shadow(0 0 6px #ff6b00);}
 #seg-display{display:flex;align-items:center;justify-content:center;background:#050505;border:1px solid #1a1a1a;border-radius:2px;padding:12px 8px;margin-bottom:10px;min-height:110px;position:relative;overflow:hidden;}
 #seg-display::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,107,0,0.03) 3px,rgba(255,107,0,0.03) 4px);pointer-events:none;}
 #floor-num{font-family:'Share Tech Mono',monospace;font-size:clamp(72px,18vw,96px);color:#ff6b00;text-shadow:0 0 20px rgba(255,107,0,0.8),0 0 40px rgba(255,107,0,0.4);line-height:1;min-width:3ch;text-align:center;transition:opacity .08s;}
@@ -71,8 +72,16 @@ html,body{height:100%;background:#0a0a0a;overflow:hidden;}
     </div>
     <div id="display-wrap">
       <div id="arrows">
-        <div class="tri tri-up" id="tri-up"></div>
-        <div class="tri tri-down" id="tri-down"></div>
+        <div class="arrow-col" id="arrow-up-col">
+          <div class="tri tri-up" id="tri-up-1"></div>
+          <div class="tri tri-up" id="tri-up-2"></div>
+          <div class="tri tri-up" id="tri-up-3"></div>
+        </div>
+        <div class="arrow-col" id="arrow-down-col">
+          <div class="tri tri-down" id="tri-down-1"></div>
+          <div class="tri tri-down" id="tri-down-2"></div>
+          <div class="tri tri-down" id="tri-down-3"></div>
+        </div>
       </div>
       <div id="seg-display">
         <div id="floor-num">1</div>
@@ -149,12 +158,43 @@ function renderDots(){
   }
 }
 
+let arrowTimer=null;
+let arrowStep=0;
+function startArrowAnim(){
+  clearInterval(arrowTimer);
+  if(stopping){
+    // 全消灯
+    for(let i=1;i<=3;i++){
+      document.getElementById('tri-up-'+i)?.classList.remove('on');
+      document.getElementById('tri-down-'+i)?.classList.remove('on');
+    }
+    return;
+  }
+  arrowTimer=setInterval(()=>{
+    arrowStep=(arrowStep+1)%4;
+    for(let i=1;i<=3;i++){
+      const up=document.getElementById('tri-up-'+i);
+      const dn=document.getElementById('tri-down-'+i);
+      if(dir===1){
+        // 上昇：3→2→1の順（下から上へ流れる）
+        const upStep=(arrowStep%3)+1;
+        up?.classList.toggle('on',i===4-upStep);
+        dn?.classList.remove('on');
+      } else {
+        // 下降：1→2→3の順（上から下へ流れる）
+        const dnStep=(arrowStep%3)+1;
+        dn?.classList.toggle('on',i===dnStep);
+        up?.classList.remove('on');
+      }
+    }
+  },200);
+}
+
 function updateDisplay(){
   const el=document.getElementById('floor-num');
   el.style.opacity='0.3';
   setTimeout(()=>{el.textContent=floorLabel(cur);el.style.opacity='1';},80);
-  document.getElementById('tri-up').classList.toggle('on',dir===1&&!stopping);
-  document.getElementById('tri-down').classList.toggle('on',dir===-1&&!stopping);
+  startArrowAnim();
   renderDots();
 }
 
@@ -164,7 +204,7 @@ function setDoor(txt,open){
 }
 
 function doorEvent(up){
-  stopping=true;clearInterval(timer);
+  stopping=true;clearInterval(timer);clearInterval(arrowTimer);
   pingpong(up);
   setDoor('◀  DOOR OPEN  ▶',true);
   clearTimeout(doorTimer);
