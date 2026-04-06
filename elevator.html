@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="エレベーター">
+<title>エレベーター</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#0a0a0a;overflow:hidden;}
+#app{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh;}
+#panel{background:#111;border:2px solid #222;border-radius:4px;width:min(280px,88vw);box-shadow:0 0 60px rgba(0,0,0,0.9);}
+#brand-bar{background:#c8102e;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;}
+#brand-logo{display:flex;align-items:center;gap:8px;}
+#diamond{width:22px;height:22px;background:#fff;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#diamond-inner{width:10px;height:10px;background:#c8102e;}
+#brand-name{color:#fff;font-size:13px;font-weight:700;letter-spacing:3px;font-family:Arial,sans-serif;}
+#brand-right{color:rgba(255,255,255,0.6);font-size:9px;letter-spacing:1px;font-family:Arial,sans-serif;}
+#display-wrap{background:#0d0d0d;padding:20px 16px 14px;border-bottom:1px solid #1a1a1a;}
+#arrows{display:flex;justify-content:center;gap:8px;margin-bottom:10px;}
+.tri{width:0;height:0;transition:all .2s;}
+.tri-up{border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:20px solid #222;}
+.tri-up.on{border-bottom-color:#ff6b00;filter:drop-shadow(0 0 8px #ff6b00);}
+.tri-down{border-left:14px solid transparent;border-right:14px solid transparent;border-top:20px solid #222;}
+.tri-down.on{border-top-color:#ff6b00;filter:drop-shadow(0 0 8px #ff6b00);}
+#seg-display{display:flex;align-items:center;justify-content:center;background:#050505;border:1px solid #1a1a1a;border-radius:2px;padding:12px 8px;margin-bottom:10px;min-height:110px;position:relative;overflow:hidden;}
+#seg-display::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,107,0,0.03) 3px,rgba(255,107,0,0.03) 4px);pointer-events:none;}
+#floor-num{font-family:'Share Tech Mono',monospace;font-size:clamp(72px,18vw,96px);color:#ff6b00;text-shadow:0 0 20px rgba(255,107,0,0.8),0 0 40px rgba(255,107,0,0.4);line-height:1;min-width:3ch;text-align:center;transition:opacity .08s;}
+#floor-f{font-family:'Share Tech Mono',monospace;font-size:28px;color:#ff6b00;opacity:.5;align-self:flex-end;margin-bottom:6px;margin-left:2px;}
+#dot-row{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;padding:0 4px;min-height:20px;}
+.dot{width:8px;height:8px;border-radius:50%;background:#1a1a1a;transition:all .25s;}
+.dot.on{background:#ff6b00;box-shadow:0 0 6px #ff6b00;}
+.dot.cur{background:#fff;box-shadow:0 0 8px #fff;transform:scale(1.3);}
+#door-bar{text-align:center;padding:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#333;letter-spacing:2px;border-top:1px solid #1a1a1a;}
+#door-bar.open{color:#00cc44;text-shadow:0 0 8px #00cc44;}
+#controls{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+#ctrl-row{display:flex;gap:8px;}
+.ctrl-btn{flex:1;height:48px;border-radius:3px;border:1px solid #2a2a2a;background:#161616;color:#555;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;letter-spacing:1px;transition:all .15s;}
+.ctrl-btn:active{transform:scale(0.96);}
+.ctrl-btn.on{background:#c8102e;border-color:#c8102e;color:#fff;box-shadow:0 0 12px rgba(200,16,46,0.4);}
+#speed-row{display:flex;align-items:center;gap:6px;}
+.sp-lbl{font-size:10px;color:#444;letter-spacing:1px;font-family:Arial,sans-serif;flex-shrink:0;}
+.sp-btn{flex:1;height:32px;border-radius:2px;border:1px solid #222;background:#111;color:#444;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;letter-spacing:1px;transition:all .15s;}
+.sp-btn.on{background:#222;color:#ff6b00;border-color:#333;}
+#set-btn{width:100%;height:36px;border-radius:2px;border:1px solid #1a1a1a;background:#0d0d0d;color:#333;font-size:11px;letter-spacing:2px;cursor:pointer;font-family:Arial,sans-serif;}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:100;display:none;align-items:center;justify-content:center;}
+#ov.on{display:flex;}
+#ov-panel{background:#111;border:1px solid #222;border-radius:4px;padding:24px;width:min(260px,88vw);}
+#ov-panel h2{color:#c8102e;font-size:14px;font-weight:700;margin-bottom:18px;text-align:center;letter-spacing:3px;font-family:Arial,sans-serif;}
+.olbl{font-size:11px;color:#555;font-weight:700;margin-bottom:5px;letter-spacing:1px;font-family:Arial,sans-serif;}
+.oinp{width:100%;height:42px;border:1px solid #222;border-radius:2px;padding:0 12px;font-size:16px;background:#0a0a0a;color:#ff6b00;outline:none;margin-bottom:12px;font-family:'Share Tech Mono',monospace;-webkit-user-select:auto;user-select:auto;}
+.oinp:focus{border-color:#c8102e;}
+.obtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.obtn{height:42px;border-radius:2px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;letter-spacing:1px;}
+.obtn.cc{background:#1a1a1a;color:#555;}
+.obtn.ok{background:#c8102e;color:#fff;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <div id="brand-bar">
+      <div id="brand-logo">
+        <div id="diamond"><div id="diamond-inner"></div></div>
+        <div id="brand-name">MITSUBISHI</div>
+      </div>
+      <div id="brand-right">ELEVATOR</div>
+    </div>
+    <div id="display-wrap">
+      <div id="arrows">
+        <div class="tri tri-up" id="tri-up"></div>
+        <div class="tri tri-down" id="tri-down"></div>
+      </div>
+      <div id="seg-display">
+        <div id="floor-num">1</div>
+        <div id="floor-f">F</div>
+      </div>
+      <div id="dot-row"></div>
+      <div id="door-bar">● MOVING</div>
+    </div>
+    <div id="controls">
+      <div id="ctrl-row">
+        <button class="ctrl-btn" id="btn-down">▼ DOWN</button>
+        <button class="ctrl-btn on" id="btn-auto">AUTO</button>
+        <button class="ctrl-btn" id="btn-up">▲ UP</button>
+      </div>
+      <div id="speed-row">
+        <div class="sp-lbl">SPEED</div>
+        <button class="sp-btn" data-s="2000">LOW</button>
+        <button class="sp-btn on" data-s="1000">MID</button>
+        <button class="sp-btn" data-s="350">HIGH</button>
+      </div>
+      <button id="set-btn">⚙ SETTING</button>
+    </div>
+  </div>
+</div>
+<div id="ov">
+  <div id="ov-panel">
+    <h2>SETTING</h2>
+    <div class="olbl">最低階（地下はマイナス）</div>
+    <input class="oinp" id="s-min" type="number" value="1">
+    <div class="olbl">最高階</div>
+    <input class="oinp" id="s-max" type="number" value="10">
+    <div class="obtns">
+      <button class="obtn cc" id="s-cancel">CANCEL</button>
+      <button class="obtn ok" id="s-ok">SAVE</button>
+    </div>
+  </div>
+</div>
+<script>
+let minFloor=1,maxFloor=10,cur=1,dir=1,speed=1000,mode='auto';
+let timer=null,stopping=false,doorTimer=null;
+
+const AC=window.AudioContext||window.webkitAudioContext;
+let actx=null;
+function initAudio(){if(!actx)actx=new AC();}
+function pingpong(up){
+  try{
+    if(!actx)return;
+    const o1=actx.createOscillator(),o2=actx.createOscillator(),g=actx.createGain();
+    g.gain.setValueAtTime(0.25,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.35);
+    o1.frequency.value=up?880:660;
+    o2.frequency.value=up?1100:880;
+    o1.connect(g);o2.connect(g);g.connect(actx.destination);
+    o1.start();o1.stop(actx.currentTime+0.15);
+    o2.start(actx.currentTime+0.15);o2.stop(actx.currentTime+0.35);
+  }catch(e){}
+}
+document.addEventListener('click',initAudio,{once:true});
+document.addEventListener('touchstart',initAudio,{once:true});
+
+function floorLabel(f){if(f===0)return'G';if(f<0)return'B'+Math.abs(f);return String(f);}
+
+function renderDots(){
+  const row=document.getElementById('dot-row');
+  const total=maxFloor-minFloor+1;
+  if(total>20){row.innerHTML='';return;}
+  row.innerHTML='';
+  for(let f=maxFloor;f>=minFloor;f--){
+    const d=document.createElement('div');
+    if(f===cur)d.className='dot cur';
+    else if((dir===1&&f<cur)||(dir===-1&&f>cur))d.className='dot on';
+    else d.className='dot';
+    row.appendChild(d);
+  }
+}
+
+function updateDisplay(){
+  const el=document.getElementById('floor-num');
+  el.style.opacity='0.3';
+  setTimeout(()=>{el.textContent=floorLabel(cur);el.style.opacity='1';},80);
+  document.getElementById('tri-up').classList.toggle('on',dir===1&&!stopping);
+  document.getElementById('tri-down').classList.toggle('on',dir===-1&&!stopping);
+  renderDots();
+}
+
+function setDoor(txt,open){
+  const el=document.getElementById('door-bar');
+  el.textContent=txt;el.className=open?'open':'';
+}
+
+function doorEvent(up){
+  stopping=true;clearInterval(timer);
+  pingpong(up);
+  setDoor('◀  DOOR OPEN  ▶',true);
+  clearTimeout(doorTimer);
+  doorTimer=setTimeout(()=>{
+    setDoor('▶  DOOR CLOSE  ◀',false);
+    setTimeout(()=>{
+      setDoor('● MOVING',false);
+      stopping=false;
+      if(mode!=='stop')startTimer();
+    },900);
+  },1600);
+}
+
+function nextFloor(){
+  if(stopping)return;
+  if(cur===maxFloor&&dir===1){dir=-1;updateDisplay();doorEvent(false);return;}
+  if(cur===minFloor&&dir===-1){dir=1;updateDisplay();doorEvent(true);return;}
+  cur+=dir;updateDisplay();
+  if(Math.random()<0.12)doorEvent(dir===1);
+}
+
+function startTimer(){
+  clearInterval(timer);
+  if(mode==='stop')return;
+  timer=setInterval(()=>{if(!stopping)nextFloor();},speed);
+}
+
+document.getElementById('btn-auto').addEventListener('click',()=>{
+  mode='auto';
+  ['btn-auto','btn-up','btn-down'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('btn-auto').classList.add('on');
+  setDoor('● MOVING',false);startTimer();
+});
+document.getElementById('btn-up').addEventListener('click',()=>{
+  mode='up';dir=1;
+  ['btn-auto','btn-up','btn-down'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('btn-up').classList.add('on');
+  setDoor('● MOVING',false);startTimer();
+});
+document.getElementById('btn-down').addEventListener('click',()=>{
+  mode='down';dir=-1;
+  ['btn-auto','btn-up','btn-down'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('btn-down').classList.add('on');
+  setDoor('● MOVING',false);startTimer();
+});
+
+document.querySelectorAll('.sp-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    speed=parseInt(btn.dataset.s);
+    document.querySelectorAll('.sp-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    if(mode!=='stop')startTimer();
+  });
+});
+
+document.getElementById('set-btn').addEventListener('click',()=>{
+  document.getElementById('s-min').value=minFloor;
+  document.getElementById('s-max').value=maxFloor;
+  document.getElementById('ov').classList.add('on');
+});
+document.getElementById('s-cancel').addEventListener('click',()=>document.getElementById('ov').classList.remove('on'));
+document.getElementById('s-ok').addEventListener('click',()=>{
+  const mn=parseInt(document.getElementById('s-min').value)||1;
+  const mx=parseInt(document.getElementById('s-max').value)||10;
+  if(mx<=mn){alert('最高階は最低階より大きくしてね');return;}
+  minFloor=mn;maxFloor=mx;cur=mn;dir=1;
+  document.getElementById('ov').classList.remove('on');
+  updateDisplay();startTimer();
+});
+
+updateDisplay();startTimer();
+</script>
+</body>
+</html>
